@@ -1,0 +1,39 @@
+name: Deploy JupyterLite
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install JupyterLite
+        run: |
+          python -m pip install --upgrade pip
+          pip install jupyterlite-core jupyterlite-pyodide-kernel jupyter-server
+
+      - name: Build JupyterLite Site
+        run: |
+          # Copy .ipynb and .py files into the JupyterLite environment
+          jupyter lite build --contents . --output-dir dist
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist
+          branch: gh-pages # To deploys it to a separate gh-pages branch
