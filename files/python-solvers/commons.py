@@ -1,0 +1,107 @@
+
+"""
+Script for signal treatment used before the call of a solver.
+
+- centrering:
+    To normalise (centralise) stations and event if given from a specific
+    station.
+
+- centrering_arr:
+    To normalise (centralise) stations and event if given from the station
+    which is the closet to the geometric center of the network.
+
+"""
+
+import numpy as np
+from copy import deepcopy
+
+def centrering(stations, key, event=None):
+    """
+    Function to normalise (centralise) stations and event if given.
+
+    Parameters
+    ----------
+    stations : dict or numpy.ndarray
+        Station locations and picked arrival time.
+    key : str or int
+        Item key to select the reference station.
+    event : dict or numpy.ndarray
+        Event to be normalised with the key reference station. The default
+        is None.
+
+    Returns
+    -------
+    stations : dict or numpy.ndarray
+        Normalised (centralised) station relative to the reference station.
+    event : dict or numpy.ndarray, optional
+        Normalised (centralised) event relative to the reference station.
+
+    """
+    if type(event) == dict:
+        site_ref = deepcopy(stations[key])
+        event['X'] = event['X']-site_ref['X']
+        event['Y'] = event['Y']-site_ref['Y']
+        event['Z'] = event['Z']-site_ref['Z']
+        event['t'] = event['t']-site_ref['t']
+
+    elif type(event) == np.ndarray:
+        event = event-stations[key]
+
+    if type(stations) == dict:
+        site_ref = deepcopy(stations[key])
+        for i in stations:
+            stations[i]['X'] = stations[i]['X']-site_ref['X']
+            stations[i]['Y'] = stations[i]['Y']-site_ref['Y']
+            stations[i]['t'] = stations[i]['t']-site_ref['t']
+
+        if type(event) == dict:
+            return stations, event
+        else:
+            return stations
+
+    elif type(stations) == np.ndarray:
+        stations = stations-stations[key]
+        if type(event) == np.ndarray:
+            return stations, event
+        else:
+            return stations
+
+    else:
+        raise TypeError('stations must be dict or numpy.ndarray.')
+
+def centrering_arr(stations, event=None):
+    """
+    Function to normalise (centralise) stations and event if given.
+
+    Parameters
+    ----------
+    stations : dict
+        Station locations and picked arrival time.
+    event : dict
+        Event to be normalised with the key reference station. The default
+        is None.
+
+    Returns
+    -------
+    stations : numpy.ndarray
+        Normalised (centralised) station relative to the reference station.
+    event : numpy.ndarray, optional
+        Normalised (centralised) event relative to the reference station.
+
+    """
+    stations_arr = np.array([list(sub.values()) for sub in stations.values()])
+    mlt_d = ((stations_arr[:, 0]-stations_arr[:, None, 0])**2 + (
+              stations_arr[:, 1]-stations_arr[:, None, 1])**2)**0.5
+
+    index = np.argmin(np.sum(mlt_d, axis=0))
+
+    # most centered station
+    if event is not None:
+        event_arr = np.array(list(event.values()))
+        event_arr = event_arr-stations_arr[index]
+
+    stations_arr = stations_arr-stations_arr[index]
+    if event is not None:
+        return stations_arr, event_arr
+    else:
+        return stations_arr

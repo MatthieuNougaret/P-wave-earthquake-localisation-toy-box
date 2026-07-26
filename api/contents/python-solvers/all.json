@@ -1,0 +1,71 @@
+{
+  "content": [
+    {
+      "content": null,
+      "created": "2026-07-26T13:49:00.696806Z",
+      "format": null,
+      "hash": null,
+      "hash_algorithm": null,
+      "last_modified": "2026-07-26T13:48:48.212374Z",
+      "mimetype": null,
+      "name": "example_notebook.ipynb",
+      "path": "python-solvers/example_notebook.ipynb",
+      "size": 1020,
+      "type": "notebook",
+      "writable": true
+    },
+    {
+      "content": null,
+      "created": "2026-07-26T13:49:00.697009Z",
+      "format": null,
+      "hash": null,
+      "hash_algorithm": null,
+      "last_modified": "2026-07-26T13:48:48.212374Z",
+      "mimetype": "text/x-python",
+      "name": "generate_eq.py",
+      "path": "python-solvers/generate_eq.py",
+      "size": 3057,
+      "type": "file",
+      "writable": true
+    },
+    {
+      "content": null,
+      "created": "2026-07-26T13:49:00.696373Z",
+      "format": null,
+      "hash": null,
+      "hash_algorithm": null,
+      "last_modified": "2026-07-26T13:48:48.212080Z",
+      "mimetype": "text/x-python",
+      "name": "commons.py",
+      "path": "python-solvers/commons.py",
+      "size": 3230,
+      "type": "file",
+      "writable": true
+    },
+    {
+      "content": null,
+      "created": "2026-07-26T13:49:00.696584Z",
+      "format": null,
+      "hash": null,
+      "hash_algorithm": null,
+      "last_modified": "2026-07-26T13:48:48.212374Z",
+      "mimetype": "application/yaml",
+      "name": "deploy-jupyterlite.yml",
+      "path": "python-solvers/deploy-jupyterlite.yml",
+      "size": 933,
+      "type": "file",
+      "writable": true
+    }
+  ],
+  "created": "2026-07-26T13:49:00.697009Z",
+  "format": "json",
+  "hash": null,
+  "hash_algorithm": null,
+  "last_modified": "2026-07-26T13:49:00.697009Z",
+  "mimetype": null,
+  "name": "python-solvers",
+  "path": "python-solvers",
+  "size": null,
+  "type": "directory",
+  "writable": true
+}
