@@ -73,7 +73,7 @@ def generate_event(stations:dict|np.ndarray, limites:np.ndarray,
         dists = np.sum((event_arr[:3]-stations[:, :3])**2, axis=1)**0.5
         noises = np.random.randn(len(stations)) * dists / vp * noise_prop
         stations_true[:, 3] = event['t'] + dists / vp
-        stations[:, 3] = event['t'] + dists / vp + noise
+        stations[:, 3] = event['t'] + dists / vp + noises
 
     else:
         raise TypeError(f'`stations` must be either `dict` or `np.ndarray`' \
