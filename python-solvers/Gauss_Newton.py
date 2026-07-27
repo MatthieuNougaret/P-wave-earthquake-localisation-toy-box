@@ -143,6 +143,9 @@ def loop_Gauss_Newton(stations:np.ndarray, event_test:np.ndarray,
     dampling[2, 2] = steps[2]
     dampling[3, 3] = steps[3]
 
+    start_point = np.copy(event_test)
+    depth_res = 1.0
+
     res, dist = compute_residuals(stations, event_test, vp)
     misfit_current = np.sum(res**2)/2
 
@@ -161,17 +164,32 @@ def loop_Gauss_Newton(stations:np.ndarray, event_test:np.ndarray,
         delta_m = np.linalg.solve(Hess_LM, -grad_v)
 
         tested = event_test + delta_m
-        errors, _ = compute_residuals(stations, tested, vp)
-        r_test = np.sum(errors**2)/2
-        if r_test < misfit_current:
-            event_test = tested.copy()
-            misfit_current = r_test
-            dist = _.copy()
-            res = errors.copy()
-            dampling = dampling / factor
+        if tested[2] > 0:
+            depth_res *= 1.5
+            event_test[2] = start_point[2] * depth_res
+            if event_test[2] > -1:
+                event_test[2] = -1
+
+            res, dist = compute_residuals(stations, event_test, vp)
+            misfit_current = np.sum(res**2)/2
+
+            dampling[2, 2] = steps[2]
+
+            delta_m = np.ones(4)
+            grad_v = np.ones(4)
 
         else:
-            dampling = dampling * factor
+            errors, _ = compute_residuals(stations, tested, vp)
+            r_test = np.sum(errors**2)/2
+            if r_test < misfit_current:
+                event_test = tested.copy()
+                misfit_current = r_test
+                dist = _.copy()
+                res = errors.copy()
+                dampling = dampling / factor
+
+            else:
+                dampling = dampling * factor
 
         history[i+1] = event_test
         cost_story[i+1] = math.sqrt(np.sum(res**2 /n_stations))
