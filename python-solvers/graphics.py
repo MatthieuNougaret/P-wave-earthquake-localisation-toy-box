@@ -375,7 +375,7 @@ def history_3d(history:np.ndarray|list[list[float]],
     if len(history) > 1_001:
         indexes = split_curve_3d(history, 1_001, 1e-4)
         sub_hist = history[indexes]
-        steps = indexes
+        steps = steps[indexes]
     else:
         sub_hist = history
 
