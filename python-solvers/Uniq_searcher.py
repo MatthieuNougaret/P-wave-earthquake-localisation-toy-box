@@ -198,12 +198,15 @@ def gradient_descent(stations:np.ndarray, event_test:np.ndarray,
 
     Returns
     -------
-    event_test : dict
-        Best event founded with the lower root mean square error.
-    cost_story : numpy.ndarray
-        Loss history at each iteration.
+    event_test : dictionary
+        Best event candidate (lowest RMSE).
+        {X:float, Y:float, Z:float, t:float}
     history : numpy.ndarray
-        Listing of the best event at each iteration.
+        2d array with the history of the best event candidate.
+    cost_hist : numpy.ndarray
+        Root Mean Square Error history of the best sample at each iteration.
+    misfit_fin : float
+        RMSE of `event_test`, the lowest misfit found during the search.
 
     """
     # Specified learning rate

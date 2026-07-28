@@ -16,13 +16,9 @@ Script with graphic functions.
     Iteratively splits a 3D curve into piecewise linear segments by finding
     the point of maximum squared error in each iteration.
 
-TO DO:
-    Signal-to-Noise / Variance-Based Ratio treshold
-
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 

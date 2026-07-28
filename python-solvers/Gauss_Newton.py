@@ -229,11 +229,11 @@ def Gauss_Newton(stations:np.ndarray, event_test:np.ndarray, n_iteration:int,
         Best event candidate (lowest RMSE).
         {X:float, Y:float, Z:float, t:float}
     history : numpy.ndarray
-        Vector with the history of the event candidate.
+        2d array with the history of the best event candidate.
     cost_story : numpy.ndarray
         Vector with the history of the RMSE of the event candidate.
     misfit_fin : float
-        RMSE of `event_test`.
+        RMSE of `event_test`, the lowest misfit found during the search.
 
     """
     history, cost_story, index = loop_Gauss_Newton(stations, event_test,
