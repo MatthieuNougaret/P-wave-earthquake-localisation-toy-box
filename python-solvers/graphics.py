@@ -8,11 +8,147 @@ Script with graphic functions.
     Plots a 3D spatial coordinate trajectory (X, Y, Z) and ground station
     locations.
 
+- split_curve_1d:
+    Iteratively splits a 1D curve into piecewise linear segments by finding
+    the point of maximum squared error in each iteration.
+
+- split_curve_3d:
+    Iteratively splits a 3D curve into piecewise linear segments by finding
+    the point of maximum squared error in each iteration.
+
+TO DO:
+    Signal-to-Noise / Variance-Based Ratio treshold
+
 """
 
 import numpy as np
+import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+
+def split_curve_1d(data:np.ndarray, max_splits:int=5,
+                   threshold:float|None=None):
+    """
+    Iteratively splits a 1D curve into piecewise linear segments by finding
+    the point of maximum squared error in each iteration.
+    Helper function to reduce the number of dots to save memory and
+    computations in 1d history plots.
+
+    Parameters
+    ----------
+    cost_story : numpy.ndarray
+        Input data as a vector (N,).
+    max_splits : int, default=3
+        Maximum number of splits (break points) to insert.
+    threshold : float, optional
+        If specified, early stopping criterion based on signal to noise ratio
+        between the data (avg(data)/std(data)) and the approximation (
+        avg(approximation)/std(approximation)) ratio computed after at least
+        five iteration:
+            |snr_appx / snr_data -1| <= threshold & step >= 5
+
+    Returns
+    -------
+    split_indices : numpy.ndarray
+        Indices of the split points (sorted, including start and end).
+
+    """
+    iters = np.arange(len(data))
+    snr_data = np.mean(data)/np.std(data)
+
+    # Keep track of split indices in sorted order (starts with endpoints
+    # [0, N-1])
+    split_indices = [0, len(data) - 1]
+
+    # Initial line approximation between start and end
+    approx_curve = np.interp(iters, split_indices, data[split_indices])
+    for step in range(max_splits):
+        # Calculate squared error cost curve
+        cost = (data - approx_curve) ** 2
+
+        # Find maximum cost point and where to split
+        max_cost = np.max(cost)
+        candidates = np.argwhere(cost == max_cost).flatten()
+        if len(candidates) > 1:
+            pos = np.random.choice(candidates)
+        else:
+            pos = candidates[0]
+
+        # Insert new split point while maintaining sorted order
+        split_indices.append(pos)
+        split_indices.sort()
+
+        # Update piecewise linear approximation across all current segments
+        approx_curve = np.interp(iters, split_indices, data[split_indices])
+        if step >= 5:
+            snr_appx = np.mean(approx_curve)/np.std(approx_curve)
+            var_c = np.abs(snr_appx/snr_data-1)
+            if threshold is not None and var_c <= threshold:
+                break
+
+    return np.array(split_indices)
+
+def split_curve_3d(coords_3d:np.ndarray, max_splits:int=5,
+                   threshold:float|None=None):
+    """
+    Iteratively splits a 3D curve into piecewise linear segments by finding
+    the point of maximum squared error in each iteration.
+    Helper function to reduce the number of dots to save memory and
+    computations in 3d history plots.
+
+    Parameters
+    ----------
+    coords_3d : numpy.ndarray
+        Array of shape (N, 3) containing [X, Y, Z] points.
+    max_splits : int
+        Maximum number of split points to insert.
+    threshold : float, optional
+        If specified, early stopping criterion based on signal to noise ratio
+        between the data (avg(data)/std(data)) and the approximation (
+        avg(approximation)/std(approximation)) ratio computed after at least
+        five iteration:
+            all(|snr_appx / snr_data -1| <= threshold) & step >= 5
+
+    Returns
+    -------
+    split_indices : numpy.ndarray
+        Indices of the chosen split points (sorted).
+
+    """
+    iters = np.arange(len(coords_3d))
+    snr_data = np.mean(coords_3d, axis=0)/np.std(coords_3d, axis=0)
+    split_indices = [0, len(coords_3d)-1]
+
+    approx_curve = np.column_stack((
+        np.interp(iters, split_indices, coords_3d[split_indices, 0]),
+        np.interp(iters, split_indices, coords_3d[split_indices, 1]),
+        np.interp(iters, split_indices, coords_3d[split_indices, 2])))
+
+    snr_appx = np.mean(approx_curve, axis=0)/np.std(approx_curve, axis=0)
+    for step in range(0, max_splits, 1):
+        cost = np.sum((coords_3d - approx_curve) ** 2, axis=1)
+        max_cost = np.max(cost)
+        candidates = np.argwhere(cost == max_cost).flatten()
+        if len(candidates) > 1:
+            pos = np.random.choice(candidates)
+        else:
+            pos = candidates[0]
+
+        split_indices.append(pos)
+        split_indices.sort()
+
+        approx_curve = np.column_stack((
+            np.interp(iters, split_indices, coords_3d[split_indices, 0]),
+            np.interp(iters, split_indices, coords_3d[split_indices, 1]),
+            np.interp(iters, split_indices, coords_3d[split_indices, 2])))
+
+        if step >= 5:
+            snr_appx = np.mean(approx_curve, axis=0)/np.std(approx_curve, axis=0)
+            var_c = np.abs(snr_appx / snr_data - 1)
+            if np.all(var_c) <= threshold:
+                break
+
+    return split_indices
 
 def history_2d(history:np.ndarray|list[float]|list[list[float]],
                label:str|list[str],
@@ -55,7 +191,8 @@ def history_2d(history:np.ndarray|list[float]|list[list[float]],
         string. The default is 'Metric'.
     filename : str or None, optional
         Output file path to save the interactive figure as an HTML file.
-        If provided without a `.html` extension, `.html` will be appended automatically.
+        If provided without a `.html` extension, `.html` will be appended
+        automatically.
 
     Returns
     -------
@@ -88,8 +225,20 @@ def history_2d(history:np.ndarray|list[float]|list[list[float]],
     x = np.arange(len(history))
 
     tight_margins = dict(l=20, r=20, t=50 if title else 20, b=20)
-
     if history.ndim == 1:
+        if len(history) > 1_001:
+            if log_y:
+                approx = split_curve_1d(np.log(history), 1001, 1e-4)
+            else:
+                approx = split_curve_1d(history, 1001, 1e-4)
+
+            sub_hist = history[approx]
+            x = x[approx]
+            
+        else:
+            sub_hist = history
+            
+
         fig = go.Figure()
 
         trace_name = label[0] if isinstance(label, list) else label
@@ -97,7 +246,7 @@ def history_2d(history:np.ndarray|list[float]|list[list[float]],
 
         fig.add_trace(go.Scatter(
             x=x, 
-            y=history, 
+            y=sub_hist, 
             mode='lines+markers',
             name=trace_name))
 
@@ -222,14 +371,20 @@ def history_3d(history:np.ndarray|list[list[float]],
             "`history` must be a 2D array-like structure with shape (N, 3).")
 
     steps = np.arange(0, len(history), 1).astype(str)
-
     tight_margins = dict(l=20, r=20, t=50 if title else 20, b=20)
 
     fig = go.Figure()
 
     # Trajectory Path
-    fig.add_trace(go.Scatter3d(x=history[:, 0], y=history[:, 1],
-                               z=history[:, 2],
+    if len(history) > 1_001:
+        indexes = split_curve_3d(history, 1_001, 1e-4)
+        sub_hist = history[indexes]
+        steps = indexes
+    else:
+        sub_hist = history
+
+    fig.add_trace(go.Scatter3d(x=sub_hist[:, 0], y=sub_hist[:, 1],
+                               z=sub_hist[:, 2],
                                mode='lines+markers',
                                name='Trajectory',
                                customdata=steps,
