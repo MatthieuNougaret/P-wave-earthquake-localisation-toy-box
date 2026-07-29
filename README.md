@@ -40,3 +40,8 @@ This solver have two possible mode:
 2. grid sampling: tested samples are randomly sampled in each splited box.
 
 In both case, the recorded best event and linked RMSE will came from box centers around which the zoom will occur.
+
+### Solver to add in order:
+1. Monte-Carlo sampling;
+2. Evolutionary solver;
+3. Particule Swarm optimization solver;
