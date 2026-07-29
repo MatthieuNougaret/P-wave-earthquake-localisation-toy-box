@@ -220,6 +220,9 @@ def deepen_grid_loop(stations:np.ndarray, sampling_f:float,
         elif cost_story[i] < 1e-8:
             break
 
+        if lims[2, 1] > 0:
+            lims[2] = lims[2]-lims[2, 1]+(lims[2, 1]-lims[2, 0])/(sampling_f+1)
+
     return history, cost_story, i
 
 def deepening_grid_search(stations:np.ndarray, sampling_f:float,
@@ -410,6 +413,9 @@ def deepen_grid_loop_sampling(stations:np.ndarray, sampling_f:float,
         diff = diff * (1-halving_rate)
         delta = np.column_stack((-diff, diff))
         lims = current[:, None]+delta
+
+        if lims[2, 1] > 0:
+            lims[2] = lims[2]-lims[2, 1]+(lims[2, 1]-lims[2, 0])/(sampling_f+1)
 
     return history, cost_story, i
 
