@@ -1,12 +1,6 @@
 
 """
 Script with graphic functions.
-- history_2d:
-    Plots 2D metric training history over iteration steps using Plotly.
-
-- history_3d:
-    Plots a 3D spatial coordinate trajectory (X, Y, Z) and ground station
-    locations.
 
 - split_curve_1d:
     Iteratively splits a 1D curve into piecewise linear segments by finding
@@ -16,6 +10,17 @@ Script with graphic functions.
     Iteratively splits a 3D curve into piecewise linear segments by finding
     the point of maximum squared error in each iteration.
 
+- history_2d:
+    Plots 2D metric training history over iteration steps using Plotly.
+
+- history_3d:
+    Plots a 3D spatial coordinate trajectory (X, Y, Z) and ground station
+    locations.
+
+- solver_compare:
+    Plots earthquake hypocenter solutions across different solvers in 3D
+    space.
+    
 """
 
 import numpy as np
@@ -431,3 +436,277 @@ def history_3d(history:np.ndarray|list[list[float]],
 
     fig.show()
     return fig
+
+def solver_compare(solvers:dict,
+                   stations:np.ndarray|list|None=None,
+                   station_labels:np.ndarray|list|None=None,
+                   title:str|None="Earthquake Hypocenter Solver Comparison",
+                   colorscale:str="Viridis",
+                   filename:str|None=None,
+                   height:int=1000) -> go.Figure:
+    """
+    Plots earthquake hypocenter solutions across different solvers in 3D
+    space.
+
+    Parameters
+    ----------
+    solvers : dict
+        Nested dictionary where keys are solver names and values are dicts
+        containing 'X', 'Y', 'Z', 't', and 'RMSE'.
+    stations : numpy.ndarray or list or None, optional
+        Coordinates of ground stations [[X, Y, Z], ...]. The default is None.
+    station_labels : numpy.ndarray or list or None, optional
+        Custom names for each station. The default is None.
+    title : str or None, optional
+        Plot title. The default is "Earthquake Hypocenter Solver Comparison".
+    colorscale : str, optional
+        Plotly color scale for RMSE values. The default is 'Viridis'.
+    filename : str or None, optional
+        Path to export as an interactive HTML file. The default is None.
+    height : int, optional
+        Figure height in pixels. The default is 1000.
+
+    Returns
+    -------
+    fig : plotly.graph_objects.Figure
+        The constructed interactive 3D Plotly figure object.
+
+    """
+    fig = go.Figure()
+    hov_tamp_sta = ("<b>%{text}</b>"
+                    "<br>X: %{x:.2f}"
+                    "<br>Y: %{y:.2f}"
+                    "<br>Z: %{z:.2f}<extra></extra>")
+
+    # Map solver names to distinct Plotly 3D marker symbols
+    solver_names = list(solvers.keys())
+    poss_symbols = ['circle', 'square', 'diamond', 'cross', 'x',
+                    'triangle-up', 'star', 'star-triangle-down', 'bowtie']
+
+    solver_symbols = {}
+    for i, name in enumerate(solver_names):
+        solver_symbols[name] = poss_symbols[i % len(poss_symbols)]
+
+    # Extract all RMSE values to set global color limits across traces
+    all_rmse = [vals['RMSE'] for vals in solvers.values()]
+    min_rmse, max_rmse = min(all_rmse), max(all_rmse)
+
+    # Add a separate trace for each solver so users can toggle them in the legend
+    for i, (name, vals) in enumerate(solvers.items()):
+        show_colorbar = (i == 0)
+
+        x, y, z = vals['X'], vals['Y'], vals['Z']
+        t, rmse = vals['t'], vals['RMSE']
+
+        # Format custom hover text
+        hover_template = (f"<b>Solver: {name}</b><br>"
+                          f"X: {x:.6f}<br>"
+                          f"Y: {y:.6f}<br>"
+                          f"Z: {z:.6f}<br>"
+                          f"Time (t): {t:.8f} s<br>"
+                          f"RMSE: {rmse:.8f}"
+                          "<extra></extra>")
+
+        fig.add_trace(
+            go.Scatter3d(x=[x], y=[y], z=[z], mode='markers', name=name,
+                         hovertemplate=hover_template,
+                         marker=dict(size=6, symbol=solver_symbols[name],
+                                     color=[rmse], colorscale=colorscale,
+                                     cmin=min_rmse,
+                                     cmax=max_rmse,
+                                     colorbar=dict(title=dict(
+                                         text="RMSE Misfit", side="top"),
+                                         orientation="h", x=0.45,
+                                         xanchor="center", y=-0.05,
+                                         yanchor="top", thickness=15, len=0.60
+                                      ) if show_colorbar else None,
+                                     opacity=0.9)))
+
+    # Optional Ground / Seismic Stations
+    if stations is not None:
+        stations = np.asarray(stations)
+        if station_labels is None:
+            station_labels = [f"Station {i+1}" for i in range(len(stations))]
+
+        fig.add_trace(go.Scatter3d(x=stations[:, 0], y=stations[:, 1],
+            z=stations[:, 2], mode='markers+text', name='Seismic Stations',
+            text=station_labels, textposition='top center',
+            hovertemplate=hov_tamp_sta,
+            marker=dict(size=7, color='crimson', symbol='diamond')))
+
+    # Layout Configuration
+    tight_margins = dict(l=20, r=20, t=50 if title else 20, b=20)
+    fig.update_layout(title=title, height=height, margin=tight_margins,
+        legend=dict(title=dict(text="Solvers"), itemsizing='constant',
+                    yanchor="middle", y=0.5, xanchor="left", x=1.02),
+        scene=dict(aspectmode='data',
+                   xaxis=dict(title='X (km)', showgrid=True),
+                    yaxis=dict(title='Y (km)', showgrid=True),
+                    zaxis=dict(title='Z (Depth, km)', showgrid=True),
+                    camera=dict(eye=dict(x=1.5, y=1.5, z=1.2))))
+
+    # Export to HTML if path provided
+    if type(filename) == str:
+        if len(filename) > 0:
+            if filename.endswith('.html'):
+                save_path = filename
+            else:
+                save_path = f'{filename}.html'
+
+            fig.write_html(save_path)
+
+    fig.show()
+    return fig
+
+def build_column(vector:np.ndarray|list, sep_before:bool=True,
+                 min_width:int|None=None) -> list:
+    """
+    Formats a 1D vector of elements into a centered ASCII table column with
+    borders.
+
+    Parameters
+    ----------
+    vector : numpy.ndarray or list
+        Array or list of elements (strings, numbers) to be formatted as rows
+        in a single ASCII column.
+    sep_before : bool, optional
+        If True, includes a left border line '| ' before element text. If
+        False, starts with a single space ' '. The default is True.
+    min_width : int or None, optional
+        Minimum character width for the contents of the column. If elements
+        are shorter than min_width, padding spaces are added. The default is
+        None.
+
+    Returns
+    -------
+    column : list
+        List of formatted string lines representing the ASCII column,
+        including top, bottom, and row separator lines.
+
+    """
+    length_v = np.zeros(len(vector), dtype=int)
+    for i in range(len(vector)):
+        length_v[i] = len(str(vector[i]))
+
+    if type(min_width) == int:
+        if np.max(length_v) > min_width:
+            max_len = np.max(length_v)
+        else:
+            max_len = min_width
+
+    else:
+        max_len = np.max(length_v)
+
+    if sep_before:
+        pre_sep = '| '
+        ex_lin = '+'+'-'*(max_len+2)+'+'
+    else:
+        pre_sep = ' '
+        ex_lin = '-'*(max_len+2)+'+'
+
+    column = []
+    column.append(ex_lin)
+    for i in range(len(vector)):
+        if length_v[i] == max_len:
+            column.append(pre_sep+str(vector[i])+' |')
+
+        elif (max_len-length_v[i])%2 == 0:
+            half = (max_len-length_v[i])//2
+            column.append(pre_sep+' '*half+str(vector[i])+' '*half+' |')
+
+        elif (max_len-length_v[i])%2 == 1:
+            half = (max_len-length_v[i])//2
+            column.append(pre_sep+' '*half+str(vector[i])+' '*(half+1)+' |')
+
+        column.append(ex_lin)
+
+    return column
+
+def build_tables(data:dict, min_width:int|None=None, rounding:int=8) -> list:
+    """
+    Constructs and prints an ASCII table comparing model performance metrics,
+    automatically sorted by the final metric.
+
+    Parameters
+    ----------
+    data : dict
+        Nested dictionary where keys are model names (str) and values are
+        dicts mapping metric names (str) to their numerical error/loss
+        values. Example: {'Model A': {'X': 300.12, 'RMSE': 0.18}}
+    min_width : int or None, optional
+        Minimum column width in characters passed to `build_column`. The
+        default is None.
+    rounding : int, optional
+        Number of decimal places to round metric values. The default is 8.
+
+    Returns
+    -------
+    models_col : list
+        List of string lines representing the full formatted ASCII table.
+
+    """
+    names = np.array(list(data.keys()))
+    heads = ['Models'] + list(data[names[0]].keys())
+    errors = [list(res.values()) for res in list(data.values())]
+    errors = np.array(errors).T
+
+    # Rank models by the last metric (ascending)
+    rank = np.argsort(errors[-1])
+    errors = np.round(errors, rounding)
+    names = names[rank]
+    errors = errors[:, rank]
+
+    power = int(np.log10(np.max(errors[-1])))-1
+    minimp = abs(int(np.log10(np.min(errors[-1]))))
+    heads[-1] = heads[-1] + ' (*10^'+str(power)+')'
+    errors[-1] *= 10**abs(power)
+    errors[-1] = np.round(errors[-1], minimp)
+
+    max_name_len = max([len(str(n)) for n in names]) if len(names) > 0 else 0
+    header_model_len = len(heads[0])
+    
+    base_min_width = min_width if isinstance(min_width, int) else 0
+    models_width = max(base_min_width, max_name_len, header_model_len)
+
+    # Build the model names column with guaranteed width for header
+    models_col = build_column(names, sep_before=True, min_width=models_width)
+    metrics_col = []
+    for i in range(len(errors)):
+        if len(errors[i]) > 0:
+            max_err_len = max([len(str(val)) for val in errors[i]])
+        else:
+            max_err_len = 0
+
+        header_metric_len = len(heads[i + 1])
+        metric_width = max(base_min_width, max_err_len, header_metric_len)
+        metrics_col.append(build_column(errors[i], sep_before=False,
+                                        min_width=metric_width))
+
+    head_line = ''
+
+    # Models header cell
+    len_col = len(models_col[0]) - 4  # Available inner space
+    len_h = len(heads[0])
+    padding = len_col - len_h
+    half = padding // 2
+    extra = padding % 2
+    head_line += '| '+' '*half+heads[0]+' '*(half+extra)+' |'
+
+    # Metrics header cells
+    for i in range(len(heads) - 1):
+        len_h = len(heads[i + 1])
+        len_col = len(metrics_col[i][0]) - 3  # Available inner space
+        padding = len_col - len_h
+        half = padding // 2
+        extra = padding % 2
+        head_line += ' '+' '*half+heads[i+1]+' '*(half+extra)+' |'
+
+    for i in range(len(errors)):
+        for j in range(len(models_col)):
+            models_col[j] += metrics_col[i][j]
+
+    models_col = [models_col[0]] + [head_line] + models_col
+    for lin in models_col:
+        print(lin)
+
+    return models_col
