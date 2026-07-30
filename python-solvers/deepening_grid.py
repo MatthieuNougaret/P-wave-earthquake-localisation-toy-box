@@ -1,6 +1,6 @@
 
 """
-Script for 
+Script for deepening grid solver with and without sub sampling.
 - meshgrid_numba_flat_3d:
     Creates flattened 4D grid coordinates using Numba.
 

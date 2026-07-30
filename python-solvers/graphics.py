@@ -478,10 +478,11 @@ def solver_compare(solvers:dict,
                     "<br>Y: %{y:.2f}"
                     "<br>Z: %{z:.2f}<extra></extra>")
 
-    # Map solver names to distinct Plotly 3D marker symbols
+    # Map solver names to distinct Plotly 3D marker symbols, only these few
+    # ones are available (expect the empty version of circle, diamond and
+    # square).
     solver_names = list(solvers.keys())
-    poss_symbols = ['circle', 'square', 'diamond', 'cross', 'x',
-                    'triangle-up', 'star', 'star-triangle-down', 'bowtie']
+    poss_symbols = ['circle', 'cross', 'diamond', 'square', 'x',]
 
     solver_symbols = {}
     for i, name in enumerate(solver_names):
