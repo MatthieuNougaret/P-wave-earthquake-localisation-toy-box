@@ -41,6 +41,26 @@ This solver have two possible mode:
 
 In both case, the recorded best event and linked RMSE will came from box centers around which the zoom will occur.
 
+### Monte-Carlo one pass:
+This solver compute a large set of random samples and score them.
+
+It does not make any iteration but only one pass.
+
+It can sample the defined search space with two methods:
+1. Uniform: sample each dimension uniformly,
+2. Perturbated grid: sample with equal distance every dimention with full combinaison. Total number of samples can be lower to asked to respect the equal number of sampling per dimension.
+
+### Evolutionary:
+This solver uses a evolutinary algorithm to search for the earthquake hypocenter and origin time. This implementation use elitist selection strategy. The population is reconstructed using: survivors of the previous generation, cross-over between all survivors, 3 mutating childrens per survivors and new random samples are used to keep population size stable.
+
+Cross-over are done with full combinaison per couples to avoid values losses.
+
+The mutated childs use CMA-ES (Covariance Matrix Adaptation Evolution Strategy) with Cholesky decomposition. Covaraince matrix is kept positive and defined with the diagonal being $max(value^i_i, 1\times 10^{-16})$.
+
+The samples are constrained to stay below the air (Z $\leq$ 0) through a penalty: $score = score \times 10$ if $Z > 0$.
+
+An early stoping is raised when RMSE is lower than $1 \times 10^{-8}$ or when the decreasing rate is to slow.
+
 ### Solver to add in order:
 1. Monte-Carlo poisson disc sampling;
 2. Particule Swarm optimization solver;
