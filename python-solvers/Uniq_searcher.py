@@ -114,7 +114,7 @@ def descent_loop(stations_arr:np.ndarray, event_arr:np.ndarray,
         stopping.
 
     """
-    lr_h = 1
+    lr_h = 1.0
 
     history = np.empty((n_iteration+1, 4))
     history[0] = event_arr
