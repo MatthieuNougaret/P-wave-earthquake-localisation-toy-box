@@ -165,9 +165,9 @@ def descent_loop(stations_arr:np.ndarray, event_arr:np.ndarray,
     return history, cost_story, i
 
 def gradient_descent(stations:np.ndarray, event_test:np.ndarray,
-                     n_iteration:int, ranX:float=1, ranY:float=1,
-                     ranZ:float=1, rant:float=0.0005, lr_decay:float=0.05,
-                     patience:int=500, vp:float=4000.0):
+                     n_iteration:int, steps:np.ndarray=np.array([1.0, 1.0,
+                     1.0, 0.0005]), lr_decay:float=0.05, patience:int=500,
+                     vp:float=4000.0):
     """
     Function to make a gradient descent from a given test event and data from
     stations.
@@ -180,14 +180,10 @@ def gradient_descent(stations:np.ndarray, event_test:np.ndarray,
         Event parameters : location and time {X, T, Z, t}.
     n_iteration : int
         Maximal number of iteration.
-    ranX : float, optional
-        Specified learning rate for the X parameter. The default is 1.0.
-    ranY : float, optional
-        Specified learning rate for the Y parameter. The default is 1.0.
-    ranZ : float, optional
-        Specified learning rate for the Z parameter. The default is 1.0.
-    rant : float, optional
-        Specified learning rate for the t parameter. The default is 0.0005.
+    steps : numpy.ndarray, optional
+        Specified learning rate for the X, Y, Z and t parameters. these steps
+        will be modified during the run by lr_decay to adapt the size of the
+        modification. The default is np.array([1.0, 1.0, 1.0, 0.0005]).
     lr_decay : float, optional
         General learning rate decaying. Must be in [0, 1[. The default is
         0.05.
@@ -209,9 +205,7 @@ def gradient_descent(stations:np.ndarray, event_test:np.ndarray,
         RMSE of `event_test`, the lowest misfit found during the search.
 
     """
-    # Specified learning rate
-    steps = np.array([ranX, ranY, ranZ, rant])
-
+    # Transform learning decay rate to learning rate
     lr_upd = 1-lr_decay
 
     p3p = int(patience*3)

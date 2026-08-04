@@ -363,7 +363,7 @@ def evolution_loop(pop_size:int, limites:np.ndarray, stations:np.ndarray,
 
     return history, cost_story, i
 
-def evolution(pop_size, limites, n_iteration, stations, p_surv,
+def evolution(stations, limites, n_iteration, pop_size, p_surv,
               patience:int=10, vp:float=4000.0):
     """
     Search for the earthquake hypocenter parameters (X, Y, Z, t) that best
@@ -377,15 +377,15 @@ def evolution(pop_size, limites, n_iteration, stations, p_surv,
 
     Parameters
     ----------
-    pop_size : int
-        Length of the full population.
+    stations : numpy.ndarray
+        2d array, normalised stations parameters, shape (N, 4).
     limites : numpy.ndarray
         Bounds of the parameter space to sample from, shape (4, 2): one
         `(lower, upper)` row per parameter (X, Y, Z, t).
     n_iteration : int
         Maximum number of generations to run.
-    stations : numpy.ndarray
-        2d array, normalised stations parameters, shape (N, 4).
+    pop_size : int
+        Length of the full population.
     p_surv : float
         Fraction of `pop_size` kept as survivors each generation. Each
         generation then consists of: `num_surv` survivors + `num_surv`

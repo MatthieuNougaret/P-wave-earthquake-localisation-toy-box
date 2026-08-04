@@ -2,7 +2,7 @@
 """
 Script for deepening grid solver with and without sub sampling.
 
-- meshgrid_numba_flat_3d:
+- meshgrid_numba_flat_4d:
     Creates flattened 4D grid coordinates using Numba.
 
 - calc_misfit_numba:
@@ -37,7 +37,7 @@ import numpy as np
 from numba import jit, njit, prange
 
 @jit(nopython=True)
-def meshgrid_numba_flat_3d(x:np.ndarray, y:np.ndarray, z:np.ndarray,
+def meshgrid_numba_flat_4d(x:np.ndarray, y:np.ndarray, z:np.ndarray,
                            t:np.ndarray) -> np.ndarray:
     """
     Creates flattened 4D grid coordinates using Numba.
@@ -200,7 +200,7 @@ def deepen_grid_loop(stations:np.ndarray, sampling_f:float,
         diff = (lims[:, 1]-lims[:, 0])/2 *(1-halving_rate)
         delta = np.column_stack((-diff, diff))
 
-        samples = meshgrid_numba_flat_3d(
+        samples = meshgrid_numba_flat_4d(
             np.linspace(lims[0, 0], lims[0, 1], sampling_f),
             np.linspace(lims[1, 0], lims[1, 1], sampling_f),
             np.linspace(lims[2, 0], lims[2, 1], sampling_f),
@@ -363,7 +363,9 @@ def deepen_grid_loop_sampling(stations:np.ndarray, sampling_f:float,
         0 > hr > 1. This value indicate the reduction proportion of the
         search space at each step. With 0.20, it means: every iteration
         search on a 20% smaller space (10% of each side).
-
+    n_samples : int, optional
+        Number of samples generated during box misfit estimation. The default
+        is 100.
     vp : float, optional
         Assumed constant P-wave velocity. The default is 4000.0.
 
@@ -390,7 +392,7 @@ def deepen_grid_loop_sampling(stations:np.ndarray, sampling_f:float,
         diff = (lims[:, 1]-lims[:, 0]) / 2
         box_prop = diff / (sampling_f-1)
 
-        samples = meshgrid_numba_flat_3d(
+        samples = meshgrid_numba_flat_4d(
             np.linspace(lims[0, 0], lims[0, 1], sampling_f),
             np.linspace(lims[1, 0], lims[1, 1], sampling_f),
             np.linspace(lims[2, 0], lims[2, 1], sampling_f),
@@ -448,7 +450,8 @@ def deepening_grid_sampling(stations:np.ndarray, sampling_f:float,
         search on a 20% smaller space (10% of each side). The default is
         0.20.
     n_samples : int, optional
-        The default is 100.
+        Number of samples generated during box misfit estimation. The default
+        is 100.
     vp : float, optional
         Assumed constant P-wave velocity. The default is 4000.
 
