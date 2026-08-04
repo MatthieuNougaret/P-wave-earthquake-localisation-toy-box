@@ -85,11 +85,11 @@ Call this solver with:
 
 Where:
 - `stations` are the normalised stations data with rows beeing the stations and the columns `X`, `Y`, `Z` positions and `t` time of detection difference compared to the reference station.
-- `sampling_f` is the number of sampling done per dimension and around which the solver will focus after iteration. The number of space split is computed by: $\text{sampling\_f}^{\text{n dimensions}}$.
+- `sampling_f` is the number of sampling done per dimension and around which the solver will focus after iteration. The number of space split is computed by: $`\text{sampling\_f}^{\text{n dimensions}}`$.
 - `limites` are the upper and lower bounds of the search space within the samples will be created and tested.
 - `depth` is the maximum number of iteration (box splitting) the solver can do.
 - `halving_rate` is (in percentage) the speed at which the search space is reduced and must be between 0.0 (no zoom at all) and 1.0 (the space is shrinked to a single sample in one iteration).
-- `n_samples` is the number of samples generated during the misfit estimation of the sub-box. It will scale the total number of generated and evaluated samples to: $\left( \text{n\_samples} + 1 \right) \times \text{sampling\_f}^{\text{n dimensions}}$.
+- `n_samples` is the number of samples generated during the misfit estimation of the sub-box. It will scale the total number of generated and evaluated samples to: $`\left( \text{n\_samples} + 1 \right) \times \text{sampling\_f}^{\text{n dimensions}}`$.
 - `vp` is the P-wave velocity in the world box and is assumed to be constant.
 
 
