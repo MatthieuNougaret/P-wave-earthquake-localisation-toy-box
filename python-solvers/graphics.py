@@ -20,7 +20,15 @@ Script with graphic functions.
 - solver_compare:
     Plots earthquake hypocenter solutions across different solvers in 3D
     space.
-    
+
+- build_column
+    Formats a 1D vector of elements into a centered ASCII table column with
+    borders.
+
+- build_tables
+    Constructs and prints an ASCII table comparing model performance metrics,
+    automatically sorted by the final metric.
+
 """
 
 import numpy as np
@@ -658,10 +666,9 @@ def build_tables(data:dict, min_width:int|None=None, rounding:int=8) -> list:
     errors = errors[:, rank]
 
     power = int(np.log10(np.max(errors[-1])))-1
-    minimp = abs(int(np.log10(np.min(errors[-1]))))
     heads[-1] = heads[-1] + ' (*10^'+str(power)+')'
     errors[-1] *= 10**abs(power)
-    errors[-1] = np.round(errors[-1], minimp)
+    errors[-1] = np.round(errors[-1], rounding)
 
     max_name_len = max([len(str(n)) for n in names]) if len(names) > 0 else 0
     header_model_len = len(heads[0])

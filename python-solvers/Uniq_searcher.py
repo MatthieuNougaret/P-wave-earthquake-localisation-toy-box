@@ -170,7 +170,7 @@ def gradient_descent(stations:np.ndarray, event_test:np.ndarray,
                      vp:float=4000.0):
     """
     Function to make a gradient descent from a given test event and data from
-    stations.
+    stations, and and compute what would block numba.
 
     Parameters
     ----------

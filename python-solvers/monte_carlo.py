@@ -381,7 +381,7 @@ def monte_carlo(stations:np.ndarray, limites:np.ndarray, n_samples:int,
         samples = perturbated_grid_sampling(n_samples, lim_f32)
 
     elif sampling == 'fcc':
-        samples = fcc_sampling(n_samples, lim_f32, 0.66)
+        samples = fcc_sampling(n_samples, lim_f32, 0.75)
 
     history, cost_story, index = compute_loss_all(samples, stations_f32, vp)
 

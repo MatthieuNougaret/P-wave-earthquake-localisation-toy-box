@@ -1,36 +1,42 @@
 # -*- coding: utf-8 -*-
 """
 Script for evolutionary solver.
- 
+
 - calc_misfit_numba:
     Compute RMSE misfit between expected and one observed arrival time.
- 
+
 - compute_loss_all:
     Loop on all `samples` to compute their RMSE misfit between expected and
     observed arrival time.
- 
+
 - randoms_childs:
-    Draw uniformly-random candidate samples within given parameter bounds.
- 
+    Draw new candidate samples uniformly at random within given per-
+    parameter bounds. Used both to build the initial population and to
+    complete the population size each generation.
+
 - selections:
-    Select the best-scoring samples (survivors) from a population.
- 
+    Select the `nb_survivor` best-scoring (lowest-RMSE) samples from a
+    population, sorted from best to worst.
+
 - cross_childs:
     Create offspring by randomly mixing coordinates between pairs of
     survivors.
- 
+
 - mutants_childs:
     Create offspring by perturbing survivors with correlated (covariance-
     based) Gaussian noise.
- 
+
 - evolution_loop:
-    Run the generational loop of the genetic algorithm (selection,
-    crossover, mutation, random re-injection, early stopping).
- 
+    Run the generational loop of the genetic algorithm: score, select,
+    recombine (crossover + covariance mutation * 3), re-inject random samples,
+    and repeat, until `n_iteration` is reached or an early-stopping
+    criterion is met.
+
 - evolution:
-    Top-level entry point: build the crossover combination table, run
-    `evolution_loop`, and return the best event candidate found.
- 
+    Function to make a the search for the earthquake hypocenter parameters
+    from a given test event and data from stations, and and compute what
+    would block numba.
+
 """
 
 import math
@@ -113,7 +119,7 @@ def randoms_childs(shape:tuple, limits:np.ndarray) -> np.ndarray:
     """
     Draw new candidate samples uniformly at random within given per-
     parameter bounds. Used both to build the initial population and to
-    re-inject fresh diversity into the population each generation.
+    complete the population size each generation.
 
     Parameters
     ----------
@@ -142,11 +148,6 @@ def selections(score:np.ndarray, population:np.ndarray, nb_survivor:int
     Select the `nb_survivor` best-scoring (lowest-RMSE) samples from a
     population, sorted from best to worst.
 
-    Uses `np.argpartition` to isolate the top `nb_survivor` samples in
-    O(n) time, then sorts only that subset (O(k log k), k = nb_survivor)
-    instead of sorting the full population — this gives the same ranking
-    as a plain `np.argsort` over the whole population, but faster.
-
     Parameters
     ----------
     score : numpy.ndarray
@@ -167,6 +168,7 @@ def selections(score:np.ndarray, population:np.ndarray, nb_survivor:int
         the single best sample in the input population.
 
     """
+    # Uses np.argpartition to isolate the top nb_survivor samples
     idx = np.argpartition(score, nb_survivor)[:nb_survivor]
     rank = idx[np.argsort(score[idx])]
     survivors = population[rank]
@@ -269,17 +271,16 @@ def evolution_loop(pop_size:int, limites:np.ndarray, stations:np.ndarray,
                    patience:int=10, vp:float=4000.0) -> tuple:
     """
     Run the generational loop of the genetic algorithm: score, select,
-    recombine (crossover + covariance mutation), re-inject random samples,
+    recombine (crossover + covariance mutation *3), re-inject random samples,
     and repeat, until `n_iteration` is reached or an early-stopping
     criterion is met.
 
     Each generation's population of size `pop_size` is rebuilt as:
     `num_surv` survivors + `num_surv` crossover children + `3*num_surv`
-    mutant children (3 mutants per survivor) + `re_rand` fresh random
+    mutant children (3 mutants per survivor) + `re_rand` new random
     samples, where `num_surv = p_surv * pop_size` (rounded down to an even
     number) and `re_rand = pop_size - 5*num_surv`. For `re_rand` to stay
-    positive (so the population is refreshed with new random samples every
-    generation), `p_surv` must stay below `1/5 = 0.2`; at or above that,
+    positive, `p_surv` must stay below `1/5 = 0.2`; at or above that,
     `re_rand` is skipped and the generation's population shrinks below
     `pop_size`.
 
@@ -304,8 +305,7 @@ def evolution_loop(pop_size:int, limites:np.ndarray, stations:np.ndarray,
         Maximum number of generations to run.
     p_surv : float
         Fraction of `pop_size` kept as survivors each generation. Must be
-        below `1/5 = 0.2` for the population to be refreshed with random
-        samples every generation (see above).
+        below or equal `1/5 = 0.2` to keep population size stable.
     combinaisons : numpy.ndarray
         2d array of shape (6, 4) of crossover masks, passed through to
         `cross_childs`.
@@ -363,11 +363,11 @@ def evolution_loop(pop_size:int, limites:np.ndarray, stations:np.ndarray,
 
     return history, cost_story, i
 
-def evolution(stations, limites, n_iteration, pop_size, p_surv,
-              patience:int=10, vp:float=4000.0):
+def evolution(stations:np.ndarray, limites:np.ndarray, n_iteration:int,
+              pop_size:int, p_surv:float, patience:int=10, vp:float=4000.0):
     """
-    Search for the earthquake hypocenter parameters (X, Y, Z, t) that best
-    fit observed station arrival times, via a genetic algorithm.
+    Function to make a the search for the earthquake hypocenter parameters
+    from a given data from stations, and and compute what would block numba.
 
     Builds the fixed crossover combination table, delegates the
     generational search to `evolution_loop`, then extracts and returns the

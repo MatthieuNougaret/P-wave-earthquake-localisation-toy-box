@@ -116,7 +116,7 @@ Where:
 
 
 #### Evolutionary:
-This solver uses a evolutinary algorithm to search for the earthquake hypocenter and origin time. This implementation use elitist selection strategy. The population is reconstructed using: survivors of the previous generation, cross-over between all survivors, 3 mutating childrens per survivors and new random samples are used to keep population size stable.
+This solver use a evolutinary algorithm to search for the earthquake hypocenter and relative origin time. This implementation use elitist selection strategy. The population is reconstructed using: survivors of the previous generation, cross-over between all survivors, 3 mutating childrens per survivors and new random samples are used to keep population size stable.
 
 Cross-over are done with full combinaison per couples to avoid values losses.
 
@@ -140,5 +140,24 @@ Where:
 - `vp` is the P-wave velocity in the world box and is assumed to be constant.
 
 
-### Solver to add in order:
-1. Particule Swarm optimization solver;
+#### Particule Swarm optimization:
+This solver use sawrm intelligence algorithm to search for the earthquake hypocenter and relative origin time.
+
+An early stoping is raised when RMSE is lower than $1 \times 10^{-8}$ or when the decreasing rate is to slow.
+
+Call this solver with:
+
+    PSO_solver.evolution(stations, limites, n_iteration, pop_size, inertia, c_cogni, c_social, patience, vp)
+
+Where:
+- `stations` are the normalised stations data with rows beeing the stations and the columns `X`, `Y`, `Z` positions and `t` time of detection difference compared to the reference station.
+- `limites` are the upper and lower bounds of the search space within the samples will be created and tested.
+- `n_iteration` is the maximum number of iteration (number of generation here) the solver can do.
+- `pop_size` is the total number of samples to evaluate at each generation.
+- `inertia` is a smoothing factor on the speed directions and amplitude between iterations to avoid sharp turns and jumps.
+- `c_cogni` is the cognitive coefficient which weight the importance of the globale population direction of the search.
+- `c_social` is the social coefficient which weight the importance of the individual best sample in the direction of the search.
+- `patience` is used to detect if the misfit has stoped to decrease to trigger early stopping.
+- `vp` is the P-wave velocity in the world box and is assumed to be constant.
+
+An example of each solver call is in ./python-solver/demo.ipynb
