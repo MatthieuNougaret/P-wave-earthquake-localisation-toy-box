@@ -12,7 +12,9 @@ Script for signal treatment used before the call of a solver.
 
 """
 
+import math
 import numpy as np
+from numba import jit
 from copy import deepcopy
 
 def centrering(stations:dict|np.ndarray, key:str|int,
@@ -116,3 +118,28 @@ def centrering_arr(stations:dict|np.ndarray, event:dict|np.ndarray=None
         return stations_arr, event_arr
     else:
         return stations_arr
+
+
+def distance_dict2dict(dico_1:dict, dico_2:dict) -> float:
+    """
+    Function to compute the distance between to position stored into
+    dictionaries.
+
+    Parameters
+    ----------
+    dico_1 : dictinary
+        First position.
+    dico_2 : dictinary
+        Second position.
+
+    Returns
+    -------
+    d : float
+        Distance between the position stored into the dictionaries.
+
+    """
+    d = math.sqrt((dico_2['X'] - dico_1['X'])**2 +
+                  (dico_2['Y'] - dico_1['Y'])**2 +
+                  (dico_2['Z'] - dico_1['Z'])**2)
+
+    return d

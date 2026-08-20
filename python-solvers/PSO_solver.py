@@ -92,6 +92,8 @@ def compute_loss_all(samples_arr:np.ndarray, stations_arr:np.ndarray,
     loss = np.empty(shape=(n_samples,))
     for i in range(n_samples):
         loss[i] = calc_misfit_numba(stations_arr, samples_arr[i], vp)
+        if samples_arr[i, 2] > 0:
+            loss[i] = loss[i]*10
 
     return loss
 

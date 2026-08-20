@@ -223,6 +223,7 @@ def perturbated_grid_sampling(n_samples:int, lim_f32:np.ndarray
                               ).astype(np.float32)*differ[None]
 
     samples = samples+noise
+    samples = np.clip(samples, a_min=lim_f32[:, 0], a_max=lim_f32[:, 1])
 
     return samples
 
